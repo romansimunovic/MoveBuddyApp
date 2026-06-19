@@ -37,8 +37,8 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const response = await api.post('/auth/login', { email, password });
-      
+// NOVI KOD
+const response = await api.post('/api/auth/login', { email, password });      
       if (response.data && response.data.token) {
         await SecureStore.setItemAsync('jwt_token', response.data.token);
         router.replace('/home');

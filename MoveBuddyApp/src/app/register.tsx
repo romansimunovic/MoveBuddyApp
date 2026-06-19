@@ -24,7 +24,8 @@ export default function RegisterScreen() {
 
     setLoading(true);
     try {
-      await api.post('/auth/register', { name, email, password });
+      // NOVI KOD
+await api.post('/api/auth/register', { name, email, password });
       Alert.alert('Uspjeh', 'Račun je kreiran! Prijavite se.');
       router.replace('/'); 
     } catch (err) {
