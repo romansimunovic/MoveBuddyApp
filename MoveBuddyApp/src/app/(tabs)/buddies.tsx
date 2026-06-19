@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, useColorScheme, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, useColorScheme, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context'; 
 import { Ionicons } from '@expo/vector-icons';
 
 export default function BuddiesScreen() {

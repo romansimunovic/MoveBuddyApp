@@ -3,10 +3,15 @@ import { Stack } from 'expo-router';
 export default function RootLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      {/* Početni zasloni izvan tabova */}
       <Stack.Screen name="index" />
-      <Stack.Screen name="register" />
+      
+      {/* Grupa s donjom navigacijom */}
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="profile" options={{ presentation: 'modal' }} /> {/* Profil klizi odozdo kao premium iOS modal */}
+      
+      {/* Zasloni koji se otvaraju preko tabova */}
+      <Stack.Screen name="active-route" options={{ headerShown: false }} />
+      <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }
