@@ -1,62 +1,57 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
 
   const handleLogout = async () => {
-    await SecureStore.deleteItemAsync('jwt_token');
-    router.replace('/');
-  };
-
-  const colors = {
-    bg: isDark ? '#020617' : '#F8FAFC',
-    card: isDark ? '#0F172A' : '#FFFFFF',
-    text: isDark ? '#F8FAFC' : '#0F172A',
-    border: isDark ? '#1E293B' : '#E2E8F0'
+    Alert.alert(
+      "Odjava",
+      "Jeste li sigurni da se želite odjaviti?",
+      [
+        { text: "Odustani", style: "cancel" },
+        { 
+          text: "Odjavi me", 
+          style: "destructive",
+          onPress: async () => {
+            await SecureStore.deleteItemAsync('jwt_token');
+            router.replace('/');
+          }
+        }
+      ]
+    );
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      {/* ZATVORI GUMB */}
-      <View style={styles.topNav}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
-          <Ionicons name="close" size={24} color={colors.text} />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="close" size={28} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={[styles.navTitle, { color: colors.text }]}>Moj Profil</Text>
-        <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.content}>
-        {/* VELIKI AVATAR */}
-        <View style={styles.avatarBig}>
-          <Text style={styles.avatarBigText}>R</Text>
+      <View style={styles.userInfo}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>R</Text>
         </View>
+        <Text style={styles.userName}>Roman</Text>
+        <Text style={styles.userEmail}>Osijek / Zagreb</Text>
+      </View>
 
-        <Text style={[styles.name, { color: colors.text }]}>Roman Šimunović</Text>
-        <Text style={styles.email}>roman@movebuddy.com</Text>
-
-        {/* POSTAVKE / ACCESSIBILITY */}
-        <View style={[styles.menu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.menuItem}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="contrast-outline" size={20} color="#3B82F6" />
-              <Text style={[styles.menuText, { color: colors.text }]}>Tema sustava</Text>
-            </View>
-            <Text style={{ color: '#64748B', fontWeight: '600' }}>{isDark ? 'Tamna' : 'Svijetla'}</Text>
-          </View>
-        </View>
-
-        {/* LOGOUT */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" style={{ marginRight: 8 }} />
-          <Text style={styles.logoutText}>Odjavi se iz aplikacije</Text>
+      <View style={styles.menuContainer}>
+        <TouchableOpacity style={styles.menuItem}>
+          <Ionicons name="settings-outline" size={24} color="#475569" />
+          <Text style={styles.menuText}>Postavke računa</Text>
+          <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={24} color="#EF4444" />
+          <Text style={[styles.menuText, { color: '#EF4444' }]}>Odjavi se</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -64,18 +59,14 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  topNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16 },
-  closeButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  navTitle: { fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
-  content: { flex: 1, alignItems: 'center', padding: 24, marginTop: 20 },
-  avatarBig: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  avatarBigText: { color: '#FFFFFF', fontSize: 40, fontWeight: 'bold' },
-  name: { fontSize: 24, fontWeight: '800', letterSpacing: -0.5 },
-  email: { fontSize: 14, color: '#64748B', marginTop: 4 },
-  menu: { width: '100%', borderRadius: 20, borderWidth: 1, padding: 16, marginTop: 32 },
-  menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  menuText: { fontSize: 16, fontWeight: '600', marginLeft: 12 },
-  logoutButton: { flexDirection: 'row', alignItems: 'center', marginTop: 'auto', marginBottom: 24, padding: 16 },
-  logoutText: { color: '#EF4444', fontSize: 16, fontWeight: '700' }
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  header: { padding: 20, alignItems: 'flex-end' },
+  userInfo: { alignItems: 'center', marginBottom: 40 },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  avatarText: { fontSize: 32, color: '#FFFFFF', fontWeight: 'bold' },
+  userName: { fontSize: 24, fontWeight: '800', color: '#0F172A', marginBottom: 4 },
+  userEmail: { fontSize: 14, color: '#64748B', fontWeight: '500' },
+  menuContainer: { paddingHorizontal: 24 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  menuText: { flex: 1, fontSize: 16, fontWeight: '500', color: '#1E293B', marginLeft: 16 }
 });

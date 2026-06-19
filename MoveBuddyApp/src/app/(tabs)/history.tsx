@@ -1,73 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, SafeAreaView } from 'react-native';
-import api from '../../services/api';
+import React from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
-interface Activity {
-  id: number;
-  type: string;
-  distance: string;
-  duration: string;
-  date: string;
-}
+// Privremeni podaci za produkcijski izgled
+const MOCK_HISTORY = [
+  { id: '1', date: '19. Lipnja 2026.', time: '18:30', distance: '4.2 km', duration: '45 min', buddy: 'Matej', type: 'Trčanje' },
+  { id: '2', date: '17. Lipnja 2026.', time: '07:15', distance: '2.1 km', duration: '25 min', buddy: 'Solo', type: 'Hodanje' },
+];
 
 export default function HistoryScreen() {
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const router = useRouter();
 
-  useEffect(() => {
-    async function fetchHistory() {
-      try {
-        // Poziv na tvoj Spring Boot endpoint za dohvat aktivnosti
-        const response = await api.get('/activities/history').catch(() => ({
-          data: [
-            { id: 1, type: 'Trčanje', distance: '5.2 km', duration: '28 min', date: 'Jučer' },
-            { id: 2, type: 'Jutarnja šetnja', distance: '3.1 km', duration: '45 min', date: '15.06.2026.' },
-            { id: 3, type: 'Vožnja bicikla', distance: '12.0 km', duration: '35 min', date: '12.06.2026.' },
-          ]
-        }));
-        setActivities(response.data);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    fetchHistory();
-  }, []);
+  const renderItem = ({ item }: { item: any }) => (
+    <TouchableOpacity 
+      style={styles.card} 
+      activeOpacity={0.7}
+      onPress={() => router.push(`./activity-details/${item.id}`)}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.iconContainer}>
+          <Ionicons name={item.type === 'Trčanje' ? 'barbell' : 'walk'} size={24} color="#3B82F6" />
+        </View>
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardDate}>{item.date} • {item.time}</Text>
+          <Text style={styles.cardTitle}>{item.type} s {item.buddy}</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.wrapper}>
-        <Text style={styles.title}>Moja Povijest</Text>
-        <Text style={styles.subtitle}>Pregled tvojih prethodnih aktivnosti:</Text>
-
-        <FlatList
-          data={activities}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View>
-                <Text style={styles.activityType}>{item.type}</Text>
-                <Text style={styles.activityDate}>{item.date}</Text>
-              </View>
-              <View style={styles.statsContainer}>
-                <Text style={styles.statDist}>{item.distance}</Text>
-                <Text style={styles.statDur}>{item.duration}</Text>
-              </View>
-            </View>
-          )}
-        />
-      </View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <Text style={styles.headerTitle}>Povijest aktivnosti</Text>
+      <FlatList
+        data={MOCK_HISTORY}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
-  wrapper: { flex: 1, padding: 24 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#0F172A', marginTop: 16 },
-  subtitle: { fontSize: 15, color: '#64748B', marginBottom: 24, marginTop: 4 },
-  card: { backgroundColor: '#FFFFFF', padding: 16, borderRadius: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
-  activityType: { fontSize: 16, fontWeight: 'bold', color: '#0F172A' },
-  activityDate: { fontSize: 12, color: '#94A3B8', marginTop: 4 },
-  statsContainer: { alignItems: 'flex-end' },
-  statDist: { fontSize: 16, fontWeight: 'bold', color: '#3B82F6' },
-  statDur: { fontSize: 12, color: '#64748B', marginTop: 2 }
+  headerTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', paddingHorizontal: 24, paddingVertical: 16 },
+  listContent: { paddingHorizontal: 24, paddingBottom: 24 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center' },
+  iconContainer: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  cardInfo: { flex: 1 },
+  cardDate: { fontSize: 13, color: '#64748B', marginBottom: 4 },
+  cardTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
 });
