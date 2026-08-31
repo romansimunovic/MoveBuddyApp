@@ -9,13 +9,98 @@ export default function HomeScreen() {
   const router = useRouter();
   const [name, setName] = useState('Suputniče');
   const [minutes, setMinutes] = useState(0);
-  useFocusEffect(useCallback(() => { let mounted=true; session.user().then(async user=>{if(!user)return router.replace('/'); if(mounted){setName(user.name); try { const r=await api.get('/api/activities/user/'+user.id); if(mounted) setMinutes(r.data.reduce((sum:number,item:any)=>sum+(item.duration||0),0)); } catch {} }}); return()=>{mounted=false}; },[router]));
-  return <SafeAreaView style={styles.container} edges={['top']}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-    <View style={styles.header}><View><Text style={styles.kicker}>DANAS JE DOBAR DAN ZA KRETANJE</Text><Text style={styles.title}>Bok, {name.split(' ')[0]}!</Text></View><TouchableOpacity style={styles.avatar} onPress={()=>router.push('/profile')}><Ionicons name="person" size={20} color="#FFF"/></TouchableOpacity></View>
-    <View style={styles.hero}><View style={styles.heroIcon}><Ionicons name="heart" size={25} color="#1E7A5A"/></View><Text style={styles.heroTitle}>Jedan mali korak mijenja dan.</Text><Text style={styles.heroCopy}>Pokreni rutu, uhvati svoj ritam i zabilježi napredak.</Text><TouchableOpacity style={styles.primary} onPress={()=>router.push('/active-route')}><Ionicons name="play" size={18} color="#FFF"/><Text style={styles.primaryText}>Pokreni novu rutu</Text></TouchableOpacity></View>
-    <View style={styles.summary}><View><Text style={styles.summaryNumber}>{minutes}</Text><Text style={styles.summaryLabel}>minuta kretanja</Text></View><View style={styles.summaryLine}/><TouchableOpacity onPress={()=>router.push('/history')}><Text style={styles.summaryAction}>Pogledaj{'
-'}povijest →</Text></TouchableOpacity></View>
-    <View style={styles.section}><Text style={styles.sectionTitle}>Ne moraš sam.</Text><Text style={styles.sectionCopy}>Pronađi nekoga za šetnju, trčanje ili biciklizam — zajedništvo olakšava prvi korak.</Text><TouchableOpacity style={styles.secondary} onPress={()=>router.push('/buddies')}><Ionicons name="people" size={19} color="#1E7A5A"/><Text style={styles.secondaryText}>Pronađi suputnika</Text></TouchableOpacity></View>
-  </ScrollView></SafeAreaView>;
+
+  useFocusEffect(
+    useCallback(() => {
+      let mounted = true;
+      session.user().then(async user => {
+        if (!user) return router.replace('/');
+        if (mounted) {
+          setName(user.name);
+          try {
+            const r = await api.get('/api/activities/user/' + user.id);
+            if (mounted) {
+              setMinutes(r.data.reduce((sum: number, item: any) => sum + (item.duration || 0), 0));
+            }
+          } catch {}
+        }
+      });
+      return () => {
+        mounted = false;
+      };
+    }, [router])
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.kicker}>DANAS JE DOBAR DAN ZA KRETANJE</Text>
+            <Text style={styles.title}>Bok, {name.split(' ')[0]}!</Text>
+          </View>
+          <TouchableOpacity style={styles.avatar} onPress={() => router.push('/profile')}>
+            <Ionicons name="person" size={20} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.hero}>
+          <View style={styles.heroIcon}>
+            <Ionicons name="heart" size={25} color="#1E7A5A" />
+          </View>
+          <Text style={styles.heroTitle}>Jedan mali korak mijenja dan.</Text>
+          <Text style={styles.heroCopy}>Pokreni rutu, uhvati svoj ritam i zabilježi napredak.</Text>
+          <TouchableOpacity style={styles.primary} onPress={() => router.push('/active-route')}>
+            <Ionicons name="play" size={18} color="#FFF" />
+            <Text style={styles.primaryText}>Pokreni novu rutu</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.summary}>
+          <View>
+            <Text style={styles.summaryNumber}>{minutes}</Text>
+            <Text style={styles.summaryLabel}>minuta kretanja</Text>
+          </View>
+          <View style={styles.summaryLine} />
+          <TouchableOpacity onPress={() => router.push('/history')}>
+            <Text style={styles.summaryAction}>Pogledaj povijest →</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Ne moraš sam.</Text>
+          <Text style={styles.sectionCopy}>Pronađi nekoga za šetnju, trčanje ili biciklizam — zajedništvo olakšava prvi korak.</Text>
+          <TouchableOpacity style={styles.secondary} onPress={() => router.push('/buddies')}>
+            <Ionicons name="people" size={19} color="#1E7A5A" />
+            <Text style={styles.secondaryText}>Pronađi suputnika</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
-const styles=StyleSheet.create({container:{flex:1,backgroundColor:'#F1F7F4'},content:{padding:22,paddingBottom:34},header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:8,marginBottom:25},kicker:{fontSize:10,color:'#698278',fontWeight:'800',letterSpacing:1.1},title:{fontSize:29,color:'#12372A',fontWeight:'900',letterSpacing:-.7,marginTop:5},avatar:{width:45,height:45,borderRadius:23,backgroundColor:'#1E7A5A',justifyContent:'center',alignItems:'center'},hero:{backgroundColor:'#DCEFE5',borderRadius:26,padding:23},heroIcon:{height:46,width:46,borderRadius:15,backgroundColor:'#FFF',justifyContent:'center',alignItems:'center',marginBottom:19},heroTitle:{fontSize:25,fontWeight:'900',letterSpacing:-.5,color:'#12372A'},heroCopy:{lineHeight:21,color:'#46665A',marginTop:8,marginBottom:22},primary:{backgroundColor:'#1E7A5A',paddingVertical:15,borderRadius:14,alignItems:'center',justifyContent:'center',flexDirection:'row',gap:8},primaryText:{color:'#FFF',fontWeight:'800',fontSize:16},summary:{marginTop:16,backgroundColor:'#FFF',borderRadius:20,padding:19,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},summaryNumber:{fontSize:28,fontWeight:'900',color:'#12372A'},summaryLabel:{fontSize:12,color:'#698278',marginTop:1},summaryLine:{height:42,width:1,backgroundColor:'#E3EEE8'},summaryAction:{color:'#1E7A5A',fontWeight:'800',fontSize:13,lineHeight:18},section:{marginTop:25,padding:4},sectionTitle:{fontSize:21,fontWeight:'900',color:'#12372A'},sectionCopy:{color:'#557066',lineHeight:21,marginTop:6,marginBottom:14},secondary:{borderColor:'#B7D8C7',borderWidth:1,borderRadius:14,padding:14,flexDirection:'row',gap:9,justifyContent:'center'},secondaryText:{color:'#1E7A5A',fontWeight:'800'}});
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F1F7F4' },
+  content: { padding: 22, paddingBottom: 34 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, marginBottom: 25 },
+  kicker: { fontSize: 10, color: '#698278', fontWeight: '800', letterSpacing: 1.1 },
+  title: { fontSize: 29, color: '#12372A', fontWeight: '900', letterSpacing: -0.7, marginTop: 5 },
+  avatar: { width: 45, height: 45, borderRadius: 23, backgroundColor: '#1E7A5A', justifyContent: 'center', alignItems: 'center' },
+  hero: { backgroundColor: '#DCEFE5', borderRadius: 26, padding: 23 },
+  heroIcon: { height: 46, width: 46, borderRadius: 15, backgroundColor: '#FFF', justifyContent: 'center', alignItems: 'center', marginBottom: 19 },
+  heroTitle: { fontSize: 25, fontWeight: '900', letterSpacing: -0.5, color: '#12372A' },
+  heroCopy: { lineHeight: 21, color: '#46665A', marginTop: 8, marginBottom: 22 },
+  primary: { backgroundColor: '#1E7A5A', paddingVertical: 15, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
+  primaryText: { color: '#FFF', fontWeight: '800', fontSize: 16 },
+  summary: { marginTop: 16, backgroundColor: '#FFF', borderRadius: 20, padding: 19, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  summaryNumber: { fontSize: 28, fontWeight: '900', color: '#12372A' },
+  summaryLabel: { fontSize: 12, color: '#698278', marginTop: 1 },
+  summaryLine: { height: 42, width: 1, backgroundColor: '#E3EEE8' },
+  summaryAction: { color: '#1E7A5A', fontWeight: '800', fontSize: 13, lineHeight: 18 },
+  section: { marginTop: 25, padding: 4 },
+  sectionTitle: { fontSize: 21, fontWeight: '900', color: '#12372A' },
+  sectionCopy: { color: '#557066', lineHeight: 21, marginTop: 6, marginBottom: 14 },
+  secondary: { borderColor: '#B7D8C7', borderWidth: 1, borderRadius: 14, padding: 14, flexDirection: 'row', gap: 9, justifyContent: 'center' },
+  secondaryText: { color: '#1E7A5A', fontWeight: '800' }
+});
