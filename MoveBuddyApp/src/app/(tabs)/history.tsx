@@ -1,59 +1,14 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import api, { session } from '../../services/api';
 
-// Privremeni podaci za produkcijski izgled
-const MOCK_HISTORY = [
-  { id: '1', date: '19. Lipnja 2026.', time: '18:30', distance: '4.2 km', duration: '45 min', buddy: 'Matej', type: 'Trčanje' },
-  { id: '2', date: '17. Lipnja 2026.', time: '07:15', distance: '2.1 km', duration: '25 min', buddy: 'Solo', type: 'Hodanje' },
-];
-
-export default function HistoryScreen() {
-  const router = useRouter();
-
-  const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
-      style={styles.card} 
-      activeOpacity={0.7}
-      onPress={() => router.push(`./activity-details/${item.id}`)}
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.iconContainer}>
-          <Ionicons name={item.type === 'Trčanje' ? 'barbell' : 'walk'} size={24} color="#3B82F6" />
-        </View>
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardDate}>{item.date} • {item.time}</Text>
-          <Text style={styles.cardTitle}>{item.type} s {item.buddy}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="#CBD5E1" />
-      </View>
-    </TouchableOpacity>
-  );
-
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <Text style={styles.headerTitle}>Povijest aktivnosti</Text>
-      <FlatList
-        data={MOCK_HISTORY}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-    </SafeAreaView>
-  );
+const formatDate=(value:string)=>new Intl.DateTimeFormat('hr-HR',{day:'numeric',month:'long',year:'numeric'}).format(new Date(value));
+export default function HistoryScreen(){
+ const router=useRouter(),[items,setItems]=useState<any[]>([]),[loading,setLoading]=useState(true);
+ useFocusEffect(useCallback(()=>{let alive=true; setLoading(true); session.user().then(async user=>{if(!user)return router.replace('/');try{const {data}=await api.get('/api/activities/user/'+user.id);if(alive)setItems(data.sort((a:any,b:any)=>new Date(b.timestamp).getTime()-new Date(a.timestamp).getTime()));}finally{if(alive)setLoading(false)}});return()=>{alive=false}},[router]));
+ return <SafeAreaView style={styles.container} edges={['top']}><Text style={styles.title}>Moje aktivnosti</Text><Text style={styles.subtitle}>Svaki korak je dio tvoje priče.</Text>{loading?<ActivityIndicator style={{marginTop:45}} color="#1E7A5A"/>:<FlatList data={items} keyExtractor={item=>String(item.id)} contentContainerStyle={styles.list} ListEmptyComponent={<View style={styles.empty}><Ionicons name="footsteps-outline" size={36} color="#1E7A5A"/><Text style={styles.emptyTitle}>Tvoja priča kreće sada.</Text><Text style={styles.emptyCopy}>Započni prvu rutu i ovdje ćeš vidjeti svoj napredak.</Text></View>} renderItem={({item})=><View style={styles.card}><View style={styles.icon}><Ionicons name="walk" size={23} color="#1E7A5A"/></View><View style={{flex:1}}><Text style={styles.type}>{item.activityType}</Text><Text style={styles.date}>{formatDate(item.timestamp)} · {item.duration} min</Text></View><View style={{alignItems:'flex-end'}}><Text style={styles.distance}>{Number(item.distance).toFixed(2)} km</Text><Text style={styles.points}>+{item.points} bodova</Text></View></View>}/>}</SafeAreaView>
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  headerTitle: { fontSize: 24, fontWeight: '800', color: '#0F172A', paddingHorizontal: 24, paddingVertical: 16 },
-  listContent: { paddingHorizontal: 24, paddingBottom: 24 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center' },
-  iconContainer: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  cardInfo: { flex: 1 },
-  cardDate: { fontSize: 13, color: '#64748B', marginBottom: 4 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B' },
-});
+const styles=StyleSheet.create({container:{flex:1,backgroundColor:'#F1F7F4',paddingTop:10},title:{fontSize:27,fontWeight:'900',color:'#12372A',paddingHorizontal:22},subtitle:{color:'#698278',paddingHorizontal:22,marginTop:4},list:{padding:22,paddingTop:23},card:{backgroundColor:'#FFF',borderRadius:17,padding:15,flexDirection:'row',alignItems:'center',gap:12,marginBottom:11},icon:{height:46,width:46,borderRadius:14,backgroundColor:'#EAF7F0',justifyContent:'center',alignItems:'center'},type:{fontSize:16,fontWeight:'800',color:'#12372A'},date:{fontSize:12,color:'#698278',marginTop:3},distance:{fontWeight:'900',color:'#12372A'},points:{fontSize:12,color:'#1E7A5A',fontWeight:'700',marginTop:3},empty:{alignItems:'center',backgroundColor:'#FFF',borderRadius:22,padding:30,marginTop:16},emptyTitle:{fontSize:17,fontWeight:'800',color:'#12372A',marginTop:14},emptyCopy:{textAlign:'center',lineHeight:20,color:'#698278',marginTop:6}});
