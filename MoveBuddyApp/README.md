@@ -1,56 +1,47 @@
-# Welcome to your Expo app 👋
+# MoveBuddy
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+MoveBuddy is a mobile app that makes the first step toward movement easier: start a route, keep a simple record of progress and connect with other people who want to move. It is an early Social Impact Award project built around a simple belief — community makes healthy habits more accessible and sustainable.
 
-## Get started
+## What the demo includes
 
-1. Install dependencies
+The Expo app supports secure registration and login, starts a GPS route with a live map and distance counter, saves completed activity to the MoveBuddy backend, shows a personal activity history, and lists registered community members so a signed-in user can send an invitation to move together.
 
-   ```bash
-   npm install
-   ```
+The experience is intentionally simple and Croatian-language first: **Početna**, **Suputnici** and **Povijest** make the video flow easy to follow.
 
-2. Start the app
+## Run it in Expo
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Use Node.js 20.19 or newer. From the app directory:
 
 ```bash
-npm run reset-project
+npm install
+npx expo install --fix
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Scan the QR code with Expo Go on Android or open an iOS development build. GPS route tracking needs a real phone with Location Services enabled; it will not give a meaningful route in a browser or simulator.
 
-### Other setup steps
+By default the app calls `https://movebuddy-db.onrender.com`. To use another deployed or local backend, create a `.env` file:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```env
+EXPO_PUBLIC_API_URL=https://your-service.onrender.com
+```
 
-## Learn more
+Do not add production credentials to the repository. The backend URL is public configuration, while the sign-in token is stored on-device using Expo SecureStore.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Backend contract
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+MoveBuddy calls `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/activities`, `GET /api/activities/user/{userId}`, `GET /api/users` and `POST /api/invitations/send`.
 
-## Join the community
+The companion backend repository and deployment notes are in [MoveBuddy](https://github.com/romansimunovic/MoveBuddy).
 
-Join our community of developers creating universal apps.
+## Social impact
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Many people find it hardest to begin — and to stay consistent — when they exercise alone. Inspired by the welcoming idea of an Erasmus buddy, MoveBuddy brings that everyday support to walking, running and cycling. It is designed to make movement feel less isolating, more social and easier to repeat.
+
+## GenAI transparency
+
+MoveBuddy was conceived, directed and reviewed by its author. During development, GenAI was used as a practical support tool for code organisation, technical troubleshooting, interface copy and README editing. The work used ChatGPT/Codex with the **GPT-5.6 Terra** model, which OpenAI describes as a GPT-5.6 model designed to balance intelligence and cost. The final product decisions, Social Impact Award narrative and responsibility for review remain with the project author. [OpenAI model documentation](https://developers.openai.com/api/docs/models/gpt-5.6-terra)
+
+## License
+
+MIT. See [LICENSE](./LICENSE).

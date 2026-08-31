@@ -1,123 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import api from '../services/api';
+import api, { readableError, session } from '../services/api';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true); // Za ekran učitavanja dok provjeravamo token
-  const router = useRouter();
+  const [checking, setChecking] = useState(true);
 
-  // PROVJERA: Jeste li već prijavljeni?
   useEffect(() => {
-    async function checkExistingToken() {
-      try {
-        const token = await SecureStore.getItemAsync('jwt_token');
-        if (token) {
-          // Ako token postoji, preskačemo login i idemo ravno na Home
-          router.replace('/home');
-        }
-      } catch (e) {
-        console.log('Greška pri čitanju tokena:', e);
-      } finally {
-        setCheckingAuth(false);
-      }
-    }
-    checkExistingToken();
-  }, []);
+    SecureStore.getItemAsync('jwt_token')
+      .then((token) => { if (token) router.replace('/home'); })
+      .finally(() => setChecking(false));
+  }, [router]);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Polja su prazna', 'Molimo unesite email i lozinku.');
+    if (!email.trim() || !password) {
+      Alert.alert('Nedostaju podaci', 'Unesite e-mail adresu i lozinku.');
       return;
     }
-
     setLoading(true);
     try {
-// NOVI KOD
-const response = await api.post('/api/auth/login', { email, password });      
-      if (response.data && response.data.token) {
-        await SecureStore.setItemAsync('jwt_token', response.data.token);
-        router.replace('/home');
-      } else {
-        Alert.alert('Greška', 'Backend nije vratio autorizacijski token.');
-      }
-    } catch (error: any) {
-      console.log('Login Error:', error);
-      Alert.alert('Neuspješna prijava', 'Provjeri podatke i radi li Spring Boot backend!');
+      const { data } = await api.post('/api/auth/login', { email: email.trim().toLowerCase(), password });
+      if (!data?.token || !data?.userId) throw new Error('Invalid login response');
+      await session.save(data.token, { id: data.userId, name: data.name || 'Suputnik', email: email.trim() });
+      router.replace('/home');
+    } catch (error) {
+      Alert.alert('Prijava nije uspjela', readableError(error, 'Provjerite podatke i pokušajte ponovno.'));
     } finally {
       setLoading(false);
     }
   };
 
-  // Dok provjeravamo token, prikaži čisti loading screen
-  if (checkingAuth) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#3B82F6" />
-      </View>
-    );
-  }
+  if (checking) return <View style={styles.loading}><ActivityIndicator size="large" color="#1E7A5A" /></View>;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
+      <View style={styles.hero}>
+        <View style={styles.mark}><Text style={styles.markText}>M</Text></View>
         <Text style={styles.title}>MoveBuddy</Text>
-        <Text style={styles.subtitle}>Tvoj suputnik u kretanju</Text>
+        <Text style={styles.subtitle}>Kreni lakše. Kreni zajedno.</Text>
       </View>
-
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Email adresa"
-          placeholderTextColor="#94A3B8"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        
-        <TextInput
-          style={styles.input}
-          placeholder="Lozinka"
-          placeholderTextColor="#94A3B8"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>Prijavi se</Text>}
+      <View style={styles.card}>
+        <Text style={styles.heading}>Dobro došli natrag</Text>
+        <Text style={styles.copy}>Prijavite se i pronađite motivaciju u pokretu.</Text>
+        <TextInput style={styles.input} placeholder="E-mail adresa" placeholderTextColor="#78908A" value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" />
+        <TextInput style={styles.input} placeholder="Lozinka" placeholderTextColor="#78908A" value={password} onChangeText={setPassword} secureTextEntry onSubmitEditing={handleLogin} />
+        <TouchableOpacity style={[styles.button, loading && styles.disabled]} onPress={handleLogin} disabled={loading}>
+          {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.buttonText}>Prijavi se</Text>}
         </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => router.push('/register')} style={styles.linkButton}>
-          <Text style={styles.linkText}>
-            Nemate račun? <Text style={styles.linkTextBold}>Registrirajte se</Text>
-          </Text>
+        <TouchableOpacity onPress={() => router.push('/register')} style={styles.link}>
+          <Text style={styles.linkText}>Nemaš račun? <Text style={styles.linkStrong}>Registriraj se</Text></Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC', justifyContent: 'center', padding: 24 },
-  header: { alignItems: 'center', marginBottom: 48 },
-  title: { fontSize: 40, fontWeight: 'bold', color: '#0F172A', letterSpacing: -1 },
-  subtitle: { fontSize: 16, color: '#64748B', marginTop: 4 },
-  form: { width: '100%' },
-  input: { backgroundColor: '#FFFFFF', padding: 16, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', fontSize: 16, color: '#0F172A' },
-  button: { backgroundColor: '#3B82F6', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 8, shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 2 },
-  buttonDisabled: { backgroundColor: '#93C5FD' },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-  linkButton: { marginTop: 24, alignItems: 'center', padding: 8 },
-  linkText: { color: '#64748B', fontSize: 14 },
-  linkTextBold: { color: '#3B82F6', fontWeight: 'bold' },
+  container:{flex:1,justifyContent:'center',backgroundColor:'#F1F7F4',padding:24},
+  loading:{flex:1,justifyContent:'center',alignItems:'center',backgroundColor:'#F1F7F4'},
+  hero:{alignItems:'center',marginBottom:28},mark:{width:58,height:58,borderRadius:18,backgroundColor:'#1E7A5A',alignItems:'center',justifyContent:'center',marginBottom:12},
+  markText:{color:'#FFF',fontSize:27,fontWeight:'900'},title:{fontSize:34,fontWeight:'900',color:'#12372A',letterSpacing:-1},subtitle:{marginTop:5,fontSize:16,color:'#557066'},
+  card:{backgroundColor:'#FFF',borderRadius:24,padding:22,shadowColor:'#12372A',shadowOpacity:.08,shadowRadius:18,elevation:3},heading:{fontSize:21,fontWeight:'800',color:'#12372A'},copy:{color:'#557066',marginTop:5,marginBottom:20,lineHeight:20},
+  input:{borderWidth:1,borderColor:'#D8E7DF',borderRadius:14,paddingHorizontal:15,paddingVertical:14,color:'#12372A',fontSize:16,marginBottom:12,backgroundColor:'#FBFDFC'},
+  button:{marginTop:4,backgroundColor:'#1E7A5A',borderRadius:14,padding:16,alignItems:'center'},disabled:{opacity:.65},buttonText:{color:'#FFF',fontWeight:'800',fontSize:16},
+  link:{alignItems:'center',paddingTop:19},linkText:{color:'#557066'},linkStrong:{color:'#1E7A5A',fontWeight:'800'}
 });
