@@ -1,95 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, useColorScheme, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; 
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import api, { readableError, session } from '../../services/api';
 
-export default function BuddiesScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const [activeFilter, setActiveFilter] = useState('Sve');
-
-  const filters = ['Sve', 'Trčanje', 'Šetnja', 'Biciklizam'];
-
-  const initialBuddies = [
-    { id: 1, name: 'Ivan Horvat', sport: 'Trčanje', distance: '500m blizu', icon: 'walk' },
-    { id: 2, name: 'Marija Pavić', sport: 'Šetnja', distance: '1.2km blizu', icon: 'paw' },
-    { id: 3, name: 'Matej Kovač', sport: 'Biciklizam', distance: '3km blizu', icon: 'bicycle' },
-  ];
-
-  const filteredBuddies = activeFilter === 'Sve' 
-    ? initialBuddies 
-    : initialBuddies.filter(b => b.sport === activeFilter);
-
-  const colors = {
-    bg: isDark ? '#020617' : '#F8FAFC',
-    card: isDark ? '#0F172A' : '#FFFFFF',
-    text: isDark ? '#F8FAFC' : '#0F172A',
-    subText: isDark ? '#94A3B8' : '#64748B',
-    border: isDark ? '#1E293B' : '#E2E8F0'
-  };
-
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      <View style={styles.wrapper}>
-        <Text style={[styles.title, { color: colors.text }]}>Pronađi Suputnika</Text>
-        
-        {/* SPORTSKI FILTRI */}
-        <View style={{ maxHeight: 50, marginBottom: 16, marginTop: 12 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {filters.map((filter) => (
-              <TouchableOpacity
-                key={filter}
-                style={[
-                  styles.filterChip,
-                  { backgroundColor: activeFilter === filter ? '#3B82F6' : colors.card, borderColor: colors.border },
-                ]}
-                onPress={() => setActiveFilter(filter)}
-              >
-                <Text style={[styles.filterText, { color: activeFilter === filter ? '#FFFFFF' : colors.text }]}>
-                  {filter}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* LISTA KORISNIKA */}
-        <FlatList
-          data={filteredBuddies}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.leftInfo}>
-                <View style={styles.sportIconBg}>
-                  <Ionicons name={item.icon as any} size={20} color="#3B82F6" />
-                </View>
-                <View style={{ marginLeft: 12 }}>
-                  <Text style={[styles.buddyName, { color: colors.text }]}>{item.name}</Text>
-                  <Text style={styles.buddyMeta}>{item.sport} • {item.distance}</Text>
-                </View>
-              </View>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionText}>Pozovi</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
-      </View>
-    </SafeAreaView>
-  );
+const activities=['Sve','Trčanje','Šetnja','Biciklizam'];
+export default function BuddiesScreen(){
+ const [selected,setSelected]=useState('Sve'),[buddies,setBuddies]=useState<any[]>([]),[loading,setLoading]=useState(true),[sending,setSending]=useState<number|null>(null);
+ useFocusEffect(useCallback(()=>{let alive=true;setLoading(true);session.user().then(async me=>{if(!me)return;try{const {data}=await api.get('/api/users');if(alive)setBuddies(data.filter((user:any)=>user.id!==me.id));}catch{if(alive)setBuddies([])}finally{if(alive)setLoading(false)}});return()=>{alive=false}},[]));
+ const invite=async(id:number,name:string)=>{setSending(id);try{await api.post('/api/invitations/send',{receiverId:id});Alert.alert('Poziv poslan',`Poslali ste poziv korisniku ${name}. Zajednički korak može krenuti!`);}catch(error){Alert.alert('Poziv nije poslan',readableError(error,'Pokušajte ponovno.'));}finally{setSending(null)}};
+ return <SafeAreaView style={styles.container} edges={['top']}><View style={styles.head}><Text style={styles.title}>Suputnici</Text><Text style={styles.subtitle}>Poveži se, dogovori aktivnost, kreni zajedno.</Text></View><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>{activities.map(item=><TouchableOpacity key={item} onPress={()=>setSelected(item)} style={[styles.chip,selected===item&&styles.chipOn]}><Text style={[styles.chipText,selected===item&&styles.chipTextOn]}>{item}</Text></TouchableOpacity>)}</ScrollView>{loading?<ActivityIndicator style={{marginTop:45}} color="#1E7A5A"/>:<FlatList data={buddies} keyExtractor={item=>String(item.id)} contentContainerStyle={styles.list} ListEmptyComponent={<View style={styles.empty}><Ionicons name="people-outline" size={35} color="#1E7A5A"/><Text style={styles.emptyTitle}>Još nema drugih suputnika.</Text><Text style={styles.emptyCopy}>Pozovi prijatelja da se registrira i povezivanje može početi.</Text></View>} renderItem={({item,index})=><View style={styles.card}><View style={styles.initial}><Text style={styles.initialText}>{item.name?.charAt(0)?.toUpperCase()||'M'}</Text></View><View style={{flex:1}}><Text style={styles.name}>{item.name}</Text><Text style={styles.meta}><Ionicons name="ellipse" size={8} color="#50A57A"/> Dostupan za zajedničko kretanje</Text><Text style={styles.sport}>{selected==='Sve'?['Šetnja','Trčanje','Biciklizam'][index%3]:selected}</Text></View><TouchableOpacity style={styles.invite} onPress={()=>invite(item.id,item.name)} disabled={sending===item.id}>{sending===item.id?<ActivityIndicator size="small" color="#FFF"/>:<Text style={styles.inviteText}>Pozovi</Text>}</TouchableOpacity></View>}/>}</SafeAreaView>;
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  wrapper: { flex: 1, padding: 24 },
-  title: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5, marginTop: 16 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginRight: 8, borderWidth: 1, height: 38 },
-  filterText: { fontSize: 14, fontWeight: '600' },
-  card: { padding: 16, borderRadius: 20, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  leftInfo: { flexDirection: 'row', alignItems: 'center' },
-  sportIconBg: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center' },
-  buddyName: { fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
-  buddyMeta: { fontSize: 13, color: '#64748B', marginTop: 2 },
-  actionButton: { backgroundColor: '#10B981', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
-  actionText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' }
-});
+const styles=StyleSheet.create({container:{flex:1,backgroundColor:'#F1F7F4'},head:{paddingHorizontal:22,paddingTop:16},title:{fontSize:27,fontWeight:'900',color:'#12372A'},subtitle:{color:'#698278',marginTop:4,lineHeight:20},chips:{paddingHorizontal:22,paddingVertical:18,gap:8},chip:{backgroundColor:'#FFF',borderWidth:1,borderColor:'#D5E6DC',borderRadius:99,paddingHorizontal:15,paddingVertical:9},chipOn:{backgroundColor:'#1E7A5A',borderColor:'#1E7A5A'},chipText:{color:'#45675A',fontWeight:'700'},chipTextOn:{color:'#FFF'},list:{paddingHorizontal:22,paddingBottom:25},card:{backgroundColor:'#FFF',borderRadius:19,padding:15,flexDirection:'row',alignItems:'center',gap:11,marginBottom:11},initial:{width:45,height:45,borderRadius:15,backgroundColor:'#DCEFE5',alignItems:'center',justifyContent:'center'},initialText:{fontWeight:'900',fontSize:17,color:'#1E7A5A'},name:{fontWeight:'800',fontSize:16,color:'#12372A'},meta:{fontSize:11,color:'#698278',marginTop:3},sport:{fontSize:12,fontWeight:'700',color:'#1E7A5A',marginTop:4},invite:{backgroundColor:'#1E7A5A',paddingHorizontal:13,paddingVertical:10,borderRadius:11,minWidth:62,alignItems:'center'},inviteText:{color:'#FFF',fontWeight:'800',fontSize:12},empty:{alignItems:'center',backgroundColor:'#FFF',padding:30,borderRadius:20,marginTop:7},emptyTitle:{marginTop:12,color:'#12372A',fontWeight:'800'},emptyCopy:{textAlign:'center',color:'#698278',lineHeight:20,marginTop:5}});
